@@ -74,6 +74,19 @@
             border-radius: 4px;
         }
 
+        /* Destaque para fins de semana */
+        tr.sabado td {
+            background-color: #fff8e1; /* amarelo claro para sábado */
+        }
+
+        tr.domingo td {
+            background-color: #ffecec; /* rosa claro para domingo */
+        }
+
+        tr.sabado td, tr.domingo td {
+            transition: background-color 0.2s ease;
+        }
+
         /* Responsividade para telas menores */
         @media screen and (max-width: 600px) {
             .container {
@@ -218,6 +231,12 @@
                 const diaSemana = diasSemana[dataAtual.getDay()];
                 
                 const novaLinha = tabela.insertRow();
+
+                // Marca fins de semana com classes para estilização
+                const isSabado = dataAtual.getDay() === 6;
+                const isDomingo = dataAtual.getDay() === 0;
+                if (isSabado) novaLinha.classList.add('sabado');
+                if (isDomingo) novaLinha.classList.add('domingo');
                 
                 const celTrabalhado = novaLinha.insertCell(0);
                 celTrabalhado.innerHTML = '<input type="checkbox" class="trabalhado" checked>';
