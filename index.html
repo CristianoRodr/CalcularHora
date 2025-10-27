@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Horas Extras</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            font-size: 1.8em;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="number"], input[type="text"], input[type="time"], input[type="date"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 1em;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 1em;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+            font-size: 0.9em;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        #resumo {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #e9ffe9;
+            border: 1px solid #4CAF50;
+            border-radius: 4px;
+        }
+
+        /* Destaque para fins de semana */
+        tr.sabado td {
+            background-color: #fff8e1; /* amarelo claro para sábado */
+        }
+
+        tr.domingo td {
+            background-color: #ffecec; /* rosa claro para domingo */
+        }
+
+        tr.sabado td, tr.domingo td {
+            transition: background-color 0.2s ease;
+        }
+
+
+        @media screen and (max-width: 600px) {
+            .container {
+                padding: 10px;
+                margin: 10px;
+            }
+            h1 {
+                font-size: 1.5em;
+            }
+            .form-group {
+                margin-bottom: 10px;
+            }
+            input[type="number"], input[type="text"], input[type="time"], input[type="date"] {
+                font-size: 0.9em;
+                padding: 6px;
+            }
+            button {
+                width: 100%;
+                padding: 12px;
+                font-size: 0.9em;
+            }
+            table {
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+            th, td {
+                padding: 6px;
+                font-size: 0.8em;
+            }
+            th {
+                min-width: 80px;
+            }
+            td input[type="checkbox"] {
+                transform: scale(1.2);
+            }
+            td input[type="time"] {
+                width: 90px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Calculadora de Horas Extras</h1>
+        
+        <!-- Configurações Gerais -->
+        <div class="form-group">
+            <label for="dataInicial">Data Inicial (dd/mm/aa):</label>
+            <input type="date" id="dataInicial" onchange="preencherTabela()">
+        </div>
+        <div class="form-group">
+            <label for="salario">Salário Mensal (R$):</label>
+            <input type="number" id="salario" value="5775" step="0.01">
+        </div>
+        <div class="form-group">
+            <label for="horasMensais">Horas Mensais Padrão:</label>
+            <input type="number" id="horasMensais" value="220">
+        </div>
+        <div class="form-group">
+            <label for="adicionalSemana">Adicional Hora Extra Semana (%):</label>
+            <input type="number" id="adicionalSemana" value="60">
+        </div>
+        <div class="form-group">
+            <label for="adicionalSabado">Adicional Hora Extra Sábado (%):</label>
+            <input type="number" id="adicionalSabado" value="100">
+        </div>
+        <div class="form-group">
+            <label for="adicionalDomingo">Adicional Hora Extra Domingo (%):</label>
+            <input type="number" id="adicionalDomingo" value="100">
+        </div>
+        <div class="form-group">
+            <label for="horaEntradaPadrao">Hora de Entrada Padrão:</label>
+            <input type="time" id="horaEntradaPadrao" value="07:30">
+        </div>
+        <div class="form-group">
+            <label for="horaSaidaPadrao">Hora de Saída Padrão (sem extra):</label>
+            <input type="time" id="horaSaidaPadrao" value="17:30">
+        </div>
+        <div class="form-group">
+            <label for="intervaloAlmoco">Intervalo de Almoço (horas):</label>
+            <input type="number" id="intervaloAlmoco" value="1" step="0.5">
+        </div>
+        <div class="form-group">
+            <label for="adiantamento">Adiantamento (R$):</label>
+            <input type="number" id="adiantamento" value="0" step="0.01">
+        </div>
+
+        <!-- Tabela de Dias -->
+        <h2>Dias Trabalhados</h2>
+        <table id="tabelaDias">
+            <thead>
+                <tr>
+                    <th>Trabalhado</th>
+                    <th>Data</th>
+                    <th>Dia da Semana</th>
+                    <th>Hora Entrada</th>
+                    <th>Hora Saída</th>
+                    <th>Horas Extras</th>
+                    <th>Valor Extras (R$)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Linhas serão preenchidas dinamicamente -->
+            </tbody>
+        </table>
+
+        <button onclick="calcularTotal()">Calcular Total</button>
+
+        <!-- Resumo -->
+        <div id="resumo" style="display: none;">
+            <h2>Resumo</h2>
+            <p id="totalExtrasSemana"></p>
+            <p id="totalExtrasSabado"></p>
+            <p id="totalExtrasDomingo"></p>
+            <p id="valorBrutoExtras"></p>
+            <p id="valorBrutoTotal"></p>
+            <p id="descontoINSS"></p>
+            <p id="descontoIRRF"></p>
+            <p id="valorLiquido"></p>
+            <p id="valorLiquidoFinal"></p>
+        </div>
+    </div>
+
+    <script>
+        function preencherTabela() {
+            const dataInicial = document.getElementById('dataInicial').value;
+            if (!dataInicial) return;
+
+            const tabela = document.getElementById('tabelaDias').getElementsByTagName('tbody')[0];
+            tabela.innerHTML = ''; // Limpa a tabela
+
+            const data = new Date(dataInicial + 'T00:00:00'); // Garante que a data seja interpretada corretamente
+            const diasSemana = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+
+            // Preenche 31 dias, começando da data inicial
+            for (let i = 0; i < 31; i++) {
+                const dataAtual = new Date(data);
+                dataAtual.setDate(data.getDate() + i);
+                
+                const diaMes = dataAtual.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+                const diaSemana = diasSemana[dataAtual.getDay()];
+                
+                const novaLinha = tabela.insertRow();
+
+                // Marca fins de semana com classes para estilização
+                const isSabado = dataAtual.getDay() === 6;
+                const isDomingo = dataAtual.getDay() === 0;
+                if (isSabado) novaLinha.classList.add('sabado');
+                if (isDomingo) novaLinha.classList.add('domingo');
+                
+                const celTrabalhado = novaLinha.insertCell(0);
+                celTrabalhado.innerHTML = '<input type="checkbox" class="trabalhado" checked>';
+
+                const celData = novaLinha.insertCell(1);
+                celData.textContent = diaMes;
+
+                const celDiaSemana = novaLinha.insertCell(2);
+                celDiaSemana.textContent = diaSemana;
+
+                const celEntrada = novaLinha.insertCell(3);
+                celEntrada.innerHTML = '<input type="time" class="horaEntrada" value="07:30">';
+
+                const celSaida = novaLinha.insertCell(4);
+                celSaida.innerHTML = '<input type="time" class="horaSaida" value="18:30">';
+
+                const celHorasExtras = novaLinha.insertCell(5);
+                celHorasExtras.innerHTML = '<span class="horasExtras">0</span>';
+
+                const celValorExtras = novaLinha.insertCell(6);
+                celValorExtras.innerHTML = '<span class="valorExtras">0.00</span>';
+            }
+        }
+
+        function calcularHoras(horaEntrada, horaSaida, intervaloAlmoco) {
+            const [hE, mE] = horaEntrada.split(':').map(Number);
+            const [hS, mS] = horaSaida.split(':').map(Number);
+            const entradaMin = hE * 60 + mE;
+            const saidaMin = hS * 60 + mS;
+            const totalMin = saidaMin - entradaMin - (intervaloAlmoco * 60);
+            return totalMin / 60;
+        }
+
+        function calcularTotal() {
+            const salario = parseFloat(document.getElementById('salario').value);
+            const horasMensais = parseFloat(document.getElementById('horasMensais').value);
+            const adicionalSemana = parseFloat(document.getElementById('adicionalSemana').value) / 100 + 1;
+            const adicionalSabado = parseFloat(document.getElementById('adicionalSabado').value) / 100 + 1;
+            const adicionalDomingo = parseFloat(document.getElementById('adicionalDomingo').value) / 100 + 1;
+            const horaEntradaPadrao = document.getElementById('horaEntradaPadrao').value;
+            const horaSaidaPadrao = document.getElementById('horaSaidaPadrao').value;
+            const intervaloAlmoco = parseFloat(document.getElementById('intervaloAlmoco').value);
+            const adiantamento = parseFloat(document.getElementById('adiantamento').value);
+
+            const horaNormal = salario / horasMensais;
+            const horaExtraSemana = horaNormal * adicionalSemana;
+            const horaExtraSabado = horaNormal * adicionalSabado;
+            const horaExtraDomingo = horaNormal * adicionalDomingo;
+
+            const jornadaNormal = calcularHoras(horaEntradaPadrao, horaSaidaPadrao, intervaloAlmoco);
+
+            let totalExtrasSemana = 0;
+            let totalExtrasSabado = 0;
+            let totalExtrasDomingo = 0;
+            let valorBrutoExtras = 0;
+
+            const linhas = document.getElementById('tabelaDias').getElementsByTagName('tbody')[0].rows;
+            for (let linha of linhas) {
+                const trabalhado = linha.querySelector('.trabalhado').checked;
+                if (!trabalhado) {
+                    linha.querySelector('.horasExtras').textContent = '0.00';
+                    linha.querySelector('.valorExtras').textContent = '0.00';
+                    continue; // Pula dias não trabalhados
+                }
+
+                const diaSemana = linha.cells[2].textContent;
+                const horaEntrada = linha.querySelector('.horaEntrada').value;
+                const horaSaida = linha.querySelector('.horaSaida').value;
+
+                const horasTrabalhadas = calcularHoras(horaEntrada, horaSaida, intervaloAlmoco);
+
+                let horasExtras = 0;
+                let valorExtras = 0;
+
+                if (diaSemana === 'Sábado') {
+                    horasExtras = horasTrabalhadas;
+                    valorExtras = horasExtras * horaExtraSabado;
+                    totalExtrasSabado += horasExtras;
+                } else if (diaSemana === 'Domingo') {
+                    horasExtras = horasTrabalhadas;
+                    valorExtras = horasExtras * horaExtraDomingo;
+                    totalExtrasDomingo += horasExtras;
+                } else {
+                    horasExtras = Math.max(0, horasTrabalhadas - jornadaNormal);
+                    valorExtras = horasExtras * horaExtraSemana;
+                    totalExtrasSemana += horasExtras;
+                }
+
+                linha.querySelector('.horasExtras').textContent = horasExtras.toFixed(2);
+                linha.querySelector('.valorExtras').textContent = valorExtras.toFixed(2);
+
+                valorBrutoExtras += valorExtras;
+            }
+
+            const valorBrutoTotal = salario + valorBrutoExtras;
+
+            // Descontos aproximados (INSS e IRRF) - Ajuste conforme tabela atual
+            let inss = 0;
+            if (valorBrutoTotal <= 1412) inss = valorBrutoTotal * 0.075;
+            else if (valorBrutoTotal <= 2666.68) inss = (valorBrutoTotal - 1412) * 0.09 + 105.9;
+            else if (valorBrutoTotal <= 4000.03) inss = (valorBrutoTotal - 2666.68) * 0.12 + 105.9 + 112.92;
+            else if (valorBrutoTotal <= 7786.02) inss = (valorBrutoTotal - 4000.03) * 0.14 + 105.9 + 112.92 + 160.00;
+            else inss = 908.86; // Teto aproximado
+
+            const baseIrrf = valorBrutoTotal - inss;
+            let irrf = 0;
+            if (baseIrrf > 4664.68) irrf = baseIrrf * 0.275 - 913.63;
+            else if (baseIrrf > 3751.06) irrf = baseIrrf * 0.225 - 662.94;
+            else if (baseIrrf > 2826.66) irrf = baseIrrf * 0.15 - 381.44;
+            else if (baseIrrf > 2259.21) irrf = baseIrrf * 0.075 - 169.44;
+
+            const valorLiquido = valorBrutoTotal - inss - irrf;
+            const valorLiquidoFinal = valorLiquido - adiantamento;
+
+            // Exibir Resumo
+            document.getElementById('totalExtrasSemana').textContent = `Total Horas Extras Semana: ${totalExtrasSemana.toFixed(2)} horas`;
+            document.getElementById('totalExtrasSabado').textContent = `Total Horas Extras Sábado: ${totalExtrasSabado.toFixed(2)} horas`;
+            document.getElementById('totalExtrasDomingo').textContent = `Total Horas Extras Domingo: ${totalExtrasDomingo.toFixed(2)} horas`;
+            document.getElementById('valorBrutoExtras').textContent = `Valor Bruto Horas Extras: R$ ${valorBrutoExtras.toFixed(2)}`;
+            document.getElementById('valorBrutoTotal').textContent = `Valor Bruto Total: R$ ${valorBrutoTotal.toFixed(2)}`;
+            document.getElementById('descontoINSS').textContent = `Desconto INSS: R$ ${inss.toFixed(2)}`;
+            document.getElementById('descontoIRRF').textContent = `Desconto IRRF: R$ ${irrf.toFixed(2)}`;
+            document.getElementById('valorLiquido').textContent = `Valor Líquido: R$ ${valorLiquido.toFixed(2)}`;
+            document.getElementById('valorLiquidoFinal').textContent = `Valor Líquido Final (após adiantamento): R$ ${valorLiquidoFinal.toFixed(2)}`;
+
+            document.getElementById('resumo').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
